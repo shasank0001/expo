@@ -1,0 +1,16 @@
+models:
+  - name: lfm-1.2b
+    ollama: lfm2.5-thinking:latest
+    think: true  # native thinker: think=false leaks raw <think> reasoning as content
+  - name: qwen-2b
+    ollama: qwen3.5:2b
+    think: false
+  - name: lfm-8b-ref
+    ollama: lfm2.5:8b
+    think: false
+params:
+  temperature: 0.2
+  num_ctx: 2048
+  top_k_retrieval: 3
+  ollama_host: http://localhost:11434
+  backend_host: http://localhost:8000
