@@ -38,6 +38,41 @@ class QueryBody(BaseModel):
     include_draft: bool = False
 
 
+GOLD_FILES = ("dev.jsonl", "calibration.jsonl", "release.jsonl")
+
+
+def _load_gold_cases() -> list[dict[str, Any]]:
+    cases: list[dict[str, Any]] = []
+    gold_dir = ROOT / "eval" / "gold"
+    for name in GOLD_FILES:
+        path = gold_dir / name
+        if not path.is_file():
+            continue
+        with path.open(encoding="utf-8") as handle:
+            for line in handle:
+                if line.strip():
+                    record = json.loads(line)
+                    record.setdefault("split_file", name)
+                    cases.append(record)
+    return cases
+
+
+def _gold_summary(records: list[dict[str, Any]]) -> dict[str, Any]:
+    subjects: dict[str, int] = {}
+    statuses: dict[str, int] = {}
+    splits: dict[str, int] = {}
+    for record in records:
+        subjects[str(record.get("subject", "?"))] = subjects.get(str(record.get("subject", "?")), 0) + 1
+        statuses[str(record.get("expected_status", "?"))] = statuses.get(str(record.get("expected_status", "?")), 0) + 1
+        splits[str(record.get("split", "?"))] = splits.get(str(record.get("split", "?")), 0) + 1
+    return {
+        "cases": len(records),
+        "subjects": dict(sorted(subjects.items())),
+        "statuses": dict(sorted(statuses.items())),
+        "splits": dict(sorted(splits.items())),
+    }
+
+
 def _sft_paths() -> tuple[Path, ...]:
     configured = os.getenv("HARNESS_SFT_DATA")
     if configured:
@@ -174,6 +209,57 @@ def create_app(
     @app.get("/", include_in_schema=False)
     def data_browser() -> FileResponse:
         return FileResponse(static_root / "index.html")
+
+    @app.get("/gold", include_in_schema=False)
+    def gold_browser() -> FileResponse:
+        return FileResponse(static_root / "gold.html")
+
+    @app.get("/gold/summary")
+    def gold_summary() -> dict[str, Any]:
+        return _gold_summary(_load_gold_cases())
+
+    @app.get("/gold/cases")
+    def gold_cases(
+        q: str = Query(default="", max_length=200),
+        subject: str = Query(default="all", max_length=40),
+        status: str = Query(default="all", max_length=40),
+        split: str = Query(default="all", max_length=40),
+        page: int = Query(default=1, ge=1, le=100000),
+        page_size: int = Query(default=20, ge=1, le=100),
+    ) -> dict[str, Any]:
+        records = _load_gold_cases()
+        needle = q.casefold().strip()
+
+        def matches(record: dict[str, Any]) -> bool:
+            if subject != "all" and str(record.get("subject")) != subject:
+                return False
+            if status != "all" and str(record.get("expected_status")) != status:
+                return False
+            if split != "all" and str(record.get("split")) != split:
+                return False
+            if not needle:
+                return True
+            return needle in json.dumps(record, sort_keys=True).casefold()
+
+        filtered = [record for record in records if matches(record)]
+        pages = max(1, (len(filtered) + page_size - 1) // page_size)
+        safe_page = min(page, pages)
+        start = (safe_page - 1) * page_size
+        return {
+            "items": filtered[start:start + page_size],
+            "total": len(filtered),
+            "page": safe_page,
+            "page_size": page_size,
+            "pages": pages,
+            "summary": _gold_summary(records),
+        }
+
+    @app.get("/gold/cases/{case_id}")
+    def gold_case(case_id: str) -> dict[str, Any]:
+        for record in _load_gold_cases():
+            if str(record.get("id")) == case_id:
+                return record
+        raise HTTPException(status_code=404, detail="Case not found")
 
     @app.get("/data/summary")
     def data_summary() -> dict[str, Any]:
