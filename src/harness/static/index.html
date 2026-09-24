@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#11130f">
+    <title>Signal Archive — generated data</title>
+    <link rel="stylesheet" href="/static/style.css">
+  </head>
+  <body>
+    <div class="grain" aria-hidden="true"></div>
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="Signal Archive home">
+        <span class="brand-mark">SA</span>
+        <span><strong>Signal Archive</strong><small>generated data / v1</small></span>
+      </a>
+      <div class="topbar-meta"><span class="live-dot"></span><span>local dataset</span><span class="divider"></span><span id="dataset-file">loading…</span></div>
+    </header>
+
+    <main class="shell">
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">CSE OFFLINE ASSISTANT / TRAINING CORPUS</p>
+          <h1>Browse the<br><em>signal.</em></h1>
+          <p class="hero-lede">A calm, searchable view of every generated training case—tool calls, refusals, citations, and structured explanations.</p>
+        </div>
+        <div class="hero-orbit" aria-hidden="true"><span class="orbit-core">SFT</span><i class="orbit orbit-a"></i><i class="orbit orbit-b"></i><i class="orbit orbit-c"></i></div>
+      </section>
+
+      <section class="stats" aria-label="Dataset summary">
+        <article class="stat-card"><span class="stat-label">Records</span><strong id="stat-records">—</strong><span class="stat-note">unique JSONL cases</span></article>
+        <article class="stat-card"><span class="stat-label">Source notes</span><strong id="stat-sources">—</strong><span class="stat-note">manifest-backed</span></article>
+        <article class="stat-card accent-amber"><span class="stat-label">Tool calls</span><strong id="stat-tools">—</strong><span class="stat-note">filesystem patterns</span></article>
+        <article class="stat-card accent-blue"><span class="stat-label">HTML cases</span><strong id="stat-html">—</strong><span class="stat-note">presentation targets</span></article>
+      </section>
+
+      <section class="toolbar" aria-label="Filter records">
+        <label class="search-box"><span>⌕</span><input id="search" type="search" placeholder="Search prompts, topics, IDs…" autocomplete="off"><kbd>⌘ K</kbd></label>
+        <div class="filter-group">
+          <label><span>Family</span><select id="family"><option value="all">All families</option></select></label>
+          <label><span>Source</span><select id="status"><option value="all">All statuses</option><option value="draft">Draft</option><option value="none">No source</option></select></label>
+          <button id="reset" class="reset-button" type="button">Reset</button>
+        </div>
+      </section>
+
+      <section class="workspace">
+        <div class="results-head"><div><p class="eyebrow">RECORDS</p><h2 id="result-count">Loading archive…</h2></div><div class="result-note" id="filter-note">All generated cases</div></div>
+        <div id="record-list" class="record-list" aria-live="polite"></div>
+        <div id="empty-state" class="empty-state" hidden><span>∅</span><h3>No cases match that filter.</h3><p>Try a broader search or reset the filters.</p></div>
+        <nav class="pagination" aria-label="Pagination"><button id="prev" type="button">← Previous</button><span id="page-label">1 / 1</span><button id="next" type="button">Next →</button></nav>
+      </section>
+    </main>
+
+    <aside id="drawer" class="drawer" aria-hidden="true" aria-label="Record details">
+      <div class="drawer-backdrop" data-close></div>
+      <div class="drawer-panel">
+        <div class="drawer-header"><div><p class="eyebrow">CASE DETAIL</p><h2 id="drawer-id">—</h2></div><button class="icon-button" type="button" data-close aria-label="Close details">×</button></div>
+        <div class="drawer-meta" id="drawer-meta"></div>
+        <div class="tabs" role="tablist"><button class="tab active" data-tab="conversation" role="tab">Conversation</button><button class="tab" data-tab="json" role="tab">Raw JSON</button><button class="tab" data-tab="html" role="tab">HTML preview</button></div>
+        <div id="conversation-view" class="drawer-content tab-panel active"></div>
+        <pre id="json-view" class="drawer-content tab-panel code-block"></pre>
+        <div id="html-view" class="drawer-content tab-panel"><div class="html-frame"></div><p class="html-caption">Rendered from the assistant’s HTML output. Content remains provisional until source review.</p></div>
+      </div>
+    </aside>
+    <script src="/static/app.js" defer></script>
+  </body>
+</html>

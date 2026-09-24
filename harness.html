@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eval Harness — How It Works</title>
+<style>
+  :root { --bg:#f7f8fa; --card:#fff; --ink:#1e2430; --mut:#5b6575; --line:#e5e8ee;
+          --green:#1a9e54; --red:#d64545; --amber:#c47b12; --blue:#2563eb; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+         font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif; line-height:1.65; }
+  .wrap { max-width:920px; margin:0 auto; padding:32px 20px 80px; }
+  header h1 { margin:0 0 4px; font-size:28px; }
+  header p { color:var(--mut); margin:0 0 20px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px;
+          padding:20px 22px; margin:16px 0; }
+  h2 { font-size:20px; margin:0 0 10px; }
+  h3 { font-size:16px; margin:16px 0 6px; }
+  p, li { font-size:15px; }
+  code { background:#eef1f6; padding:1px 6px; border-radius:6px; font-size:13px; }
+  pre { background:#101828; color:#e6ebf2; padding:14px 16px; border-radius:10px;
+        font-size:12.5px; overflow-x:auto; line-height:1.5; }
+  table { width:100%; border-collapse:collapse; font-size:14px; margin:10px 0; }
+  th,td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:var(--mut); font-weight:600; }
+  .pill { display:inline-block; padding:2px 10px; border-radius:20px; font-size:12px; font-weight:600; white-space:nowrap; }
+  .ok { background:#e5f6ec; color:var(--green); } .bad { background:#fdecec; color:var(--red); }
+  .mid { background:#fdf3e3; color:var(--amber); }
+  .flow { display:flex; align-items:stretch; flex-wrap:wrap; margin:12px 0; }
+  .node { background:#eef4ff; border:1px solid #c9d9fb; border-radius:10px; padding:10px 12px;
+          font-size:13px; text-align:center; flex:1; min-width:120px; }
+  .arrow { align-self:center; padding:0 6px; color:var(--mut); font-weight:700; }
+  .take { border-left:4px solid var(--green); background:#f2fbf5; padding:10px 14px;
+          border-radius:0 10px 10px 0; margin:12px 0; font-size:14px; }
+  .warn { border-left:4px solid var(--red); background:#fdf1f1; padding:10px 14px;
+          border-radius:0 10px 10px 0; margin:12px 0; font-size:14px; }
+  footer { color:var(--mut); font-size:13px; margin-top:28px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Eval Harness — How It Works</h1>
+  <p>Reproducible, dependency-light scoring for the offline assistant · retrieval and generation judged separately · 24 Sep 2026</p>
+</header>
+
+<div class="card">
+  <h2>1. The big idea</h2>
+  <p>One question goes through a fixed 6-step pipeline. <b>Retrieval</b> (did we find the right note?)
+     is scored even with no model running. <b>Generation</b> (is the answer honest and cited?) is scored
+     only when a model response exists — never guessed. Every run ends in machine-checkable
+     <b>gates</b> (pass/fail), so results are comparable across weeks.</p>
+  <div class="flow">
+    <div class="node"><b>1 Validate</b><br>subject/unit/top_k in allow-list</div><div class="arrow">→</div>
+    <div class="node"><b>2 Scope</b><br>trusted subject + unit (user or classifier)</div><div class="arrow">→</div>
+    <div class="node"><b>3 Retrieve</b><br>BM25 inside subject/unit</div><div class="arrow">→</div>
+    <div class="node"><b>4 Gate</b><br>answer / clarify / refuse</div><div class="arrow">→</div>
+    <div class="node"><b>5 Generate</b><br>model → structured JSON</div><div class="arrow">→</div>
+    <div class="node"><b>6 Validate</b><br>citations checked, answer rendered</div>
+  </div>
+  <p style="color:var(--mut);font-size:14px">Code: <code>src/harness/orchestrator.py</code> (state machine) ·
+     scoring: <code>eval/harness.py</code> · run: <code>python -m eval.harness --gold eval/gold/dev.jsonl</code></p>
+</div>
+
+<div class="card">
+  <h2>2. Each step, plainly</h2>
+  <table>
+    <tr><th>Step</th><th>What happens</th><th>Safety property</th></tr>
+    <tr><td><b>Validate</b></td><td>Subject must exist, unit must belong to it, top_k 1–10, query non-empty.</td><td>Bad input fails fast, never reaches the model.</td></tr>
+    <tr><td><b>Scope</b></td><td>Subject comes from the UI (trusted). Unit comes from the optional dropdown,
+        else a classifier picks one only if confidence ≥ 0.80 — otherwise "ambiguous".</td><td>Model never invents subjects or units.</td></tr>
+    <tr><td><b>Retrieve</b></td><td>Per-subject BM25 index (built once, cached, rebuilt on file change).
+        Title ×3, headings ×2, body ×1. One widen-to-subject retry if the unit search is weak.</td><td>Search is bounded to verified notes; paths are allow-listed.</td></tr>
+    <tr><td><b>Gate</b></td><td>Three signals: top score, margin over 2nd place, query-word coverage (≥ 0.60).
+        Pass → answer. Weak → clarify. Very weak or out-of-domain → refuse.</td><td>Refusal is <i>structural</i>, not begging the model to behave.</td></tr>
+    <tr><td><b>Generate</b></td><td>Model must return JSON: <code>{status, answer, claims[{text, source_ids}]}</code>.
+        Max 1 model call, 30s wall budget. <code>ExtractiveGenerator</code> runs fully offline for testing.</td><td>Free text is never shown; only validated claims render.</td></tr>
+    <tr><td><b>Validate</b></td><td>Every claim's <code>source_id</code> must be in the retrieved set; word-overlap
+        with the source must clear 20%; uncited claims fail. Failure → safe refusal text.</td><td>Invented citations (<code>N_fake_…</code>) always fail.</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h2>3. Worked example (real run, offline)</h2>
+  <p>Gold case <code>dwdm-001</code>: <i>"What is the main purpose of a data warehouse?"</i> → expects
+     <code>dwdm/unit-1/motivation-for-data-warehousing-and-data-mining.md</code>.</p>
+  <pre>validate_request (0.005ms) → resolve_scope (subject-wide, unit=None)
+→ retrieve: 5 candidates, top = motivation-…md @ 11.29
+→ evidence_gate: ANSWER (score ok, coverage ok)
+→ generate (extractive, 1 model call)
+→ validate_citations: 1 claim, source N_fef70442dc ∈ retrieved ✓
+RESULT: status=answer, expected_rank=1, hit_at_1=true</pre>
+  <p>Refusal path: <i>"What is the capital of Mars?"</i> → gate sees out-of-domain marker →
+     <code>REFUSE</code> before any model call → <i>"The verified notes do not cover this question."</i><br>
+     Ambiguous path: <i>"Tell me about patterns."</i> → weak coverage → <code>CLARIFY</code>.</p>
+</div>
+
+<div class="card">
+  <h2>4. Metrics glossary</h2>
+  <table>
+    <tr><th>Group</th><th>Metric</th><th>Meaning</th><th>Current (dev, retrieval-only)</th></tr>
+    <tr><td>Retrieval</td><td>hit@1 / MRR / recall@3·5</td><td>Right file ranked 1st / rank quality / in top 3·5</td>
+        <td><span class="pill mid">51% / 0.63 / 79%</span> on 67-case gold (honest, vague queries incl.)</td></tr>
+    <tr><td>Abstention</td><td>refusal precision/recall, status accuracy, false-answer rate</td><td>Does it refuse exactly the unanswerable?</td><td>Not measured (no endpoint)</td></tr>
+    <tr><td>Grounding</td><td>citation precision/recall, claim-supported rate, invalid-path rate</td><td>Are cites real, retrieved, supporting?</td><td>Not measured (no endpoint)</td></tr>
+    <tr><td>System</td><td>fallback rate, latency p50/p95, retrieval-ms p50/p95</td><td>Cost of the widen retry; speed split</td><td>retrieval p50 ≈ 192ms</td></tr>
+    <tr><td>Gates</td><td>all-safe, verified-when-required, status-match</td><td>Exit code 0 only if all pass</td><td><span class="pill ok">pass</span> (vacuous parts, see §5)</td></tr>
+  </table>
+  <p style="color:var(--mut);font-size:14px">Gold splits: <code>dev</code> (26, iterate freely) ·
+     <code>calibration</code> (8, tune thresholds once) · <code>release</code> (8, run rarely, never tune to it).</p>
+</div>
+
+<div class="card">
+  <h2>5. Review findings — what must change</h2>
+  <div class="warn"><b>1. Retrieval cheats on the eval (critical).</b> <code>src/harness/notes.py::_alias_boosts</code>
+    hardcodes query→file bonuses (+4/+5) for exactly the gold questions ("apriori algorithm" → apriori file, …).
+    Measured: hit@1 <b>89% with the table, 63% without</b> (now 51% on the harder 67-case set). Fix applied: table deleted.</div>
+  <div class="warn"><b>2. Gold bug.</b> <code>cal-ml-001</code> expects <code>ml/unit-3/…</code> but
+    <code>expected_unit</code> says <code>"4"</code> — the unit filter removes the right file, so it can never hit.
+    Fix: <code>"4"</code> → <code>"3"</code>. (Cosmetic: <code>cal-oos-001</code> id mismatches its ml subject.)</div>
+  <div class="warn"><b>3. Gate refuses valid ML questions.</b> The out-of-domain word list in
+    <code>evidence.py</code> contains <code>attention</code> and <code>transformer</code> — real deep-learning terms.
+    A query on Transformer networks auto-refuses. Fix: drop those two words.</div>
+  <p><b>Minor:</b> dead check in <code>scope.py:48</code>; duplicate <code>verified_only</code> key in
+     <code>api.py::health()</code>; endpoint payload hardcodes <code>qwen3.5:2b</code>; the
+     <code>verified_path_rate</code> gate passes vacuously while all notes are <code>draft</code>
+     (correct behavior — it activates after peer review).</p>
+  <div class="take"><b>SFT data verdict: schema-valid, content-poor — your instinct is right.</b>
+    <code>html_explanation</code> outputs are canned filler ("Use the source evidence", generic table);
+    <code>scope_*</code> teaches a constant 0.91 confidence (miscalibration); no output was ever paraphrased
+    by a real model. Use it for protocol/shape training only. Before quality training: regenerate the HTML
+    family from real note text, vary confidences, and keep this set out of factual-QA claims.</div>
+</div>
+
+<footer>Sources: <code>src/harness/*.py</code> · <code>eval/harness.py</code> · live runs (21/21 tests pass, dev 26 cases) · 24 Sep 2026</footer>
+
+</div>
+</body>
+</html>

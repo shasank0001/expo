@@ -1,0 +1,11 @@
+{"id":"cal-dwdm-001","subject":"dwdm","query":"What is the goal of a data cube?","expected_status":"answer","expected_path":"dwdm/unit-2/data-modeling-with-cubes.md","expected_unit":"2","keywords":["cube","data"],"split":"calibration"}
+{"id":"cal-oose-001","subject":"oose","query":"What does a use-case diagram represent?","expected_status":"answer","expected_path":"oose/unit-3/uml-models-systems-and-views.md","expected_unit":"3","keywords":["use-case","diagram"],"split":"calibration"}
+{"id":"cal-cn-001","subject":"cn","query":"What is the role of the network layer in internetworking?","expected_status":"answer","expected_path":"cn/unit-3/network-layer-and-internetworking.md","expected_unit":"3","keywords":["network","internetworking"],"split":"calibration"}
+{"id":"cal-ml-001","subject":"ml","query":"How is a decision tree induced for classification?","expected_status":"answer","expected_path":"ml/unit-3/classification-learning-steps.md","expected_unit":"3","keywords":["decision","tree"],"split":"calibration"}
+{"id":"cal-sc-001","subject":"sc","query":"What does a fuzzy inference system do?","expected_status":"answer","expected_path":"sc/unit-2/fuzzy-inference-system.md","expected_unit":"2","keywords":["fuzzy","inference"],"split":"calibration"}
+{"id":"cal-atcd-001","subject":"atcd","query":"How is an NFA converted into a DFA?","expected_status":"answer","expected_path":"atcd/unit-1/nfa-to-dfa.md","expected_unit":"1","keywords":["nfa","dfa"],"split":"calibration"}
+{"id":"cal-oos-001","subject":"ml","query":"What is the capital of Mars?","expected_status":"refuse","split":"calibration"}
+{"id":"cal-ambiguous-001","subject":"dwdm","query":"Tell me about patterns.","expected_status":"clarify","split":"calibration"}
+{"id":"cal-atcd-002","subject":"atcd","query":"dfa vs nfa","expected_status":"answer","expected_path":"atcd/unit-1/finite-state-machine-types.md","expected_unit":"1","keywords":["dfa","nfa"],"split":"calibration"}
+{"id":"cal-sc-002","subject":"sc","query":"what is mutation in genetic algorithms","expected_status":"answer","expected_path":"sc/unit-4/ga-encoding-and-operators.md","expected_unit":"4","keywords":["mutation"],"split":"calibration"}
+{"id":"cal-refuse-002","subject":"cn","query":"give me stock market tips","expected_status":"refuse","keywords":[],"split":"calibration"}

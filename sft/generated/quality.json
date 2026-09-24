@@ -1,0 +1,17 @@
+{
+  "all_notes_provisional": true,
+  "duplicate_rejected": 291,
+  "families": {
+    "citation_validation": 40,
+    "evidence_gates": 81,
+    "filesystem_errors": 332,
+    "filesystem_tools": 584,
+    "html_explanation": 292,
+    "prompt_robustness": 292,
+    "scope_classification": 292
+  },
+  "records": 1913,
+  "source_status_counts": {
+    "draft": 1872
+  }
+}

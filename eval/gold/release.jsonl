@@ -1,0 +1,8 @@
+{"id":"rel-dwdm-001","subject":"dwdm","query":"What does the Apriori algorithm do in a transaction database?","expected_status":"answer","expected_path":"dwdm/unit-3/apriori-algorithm.md","expected_unit":"3","keywords":["apriori","transaction"],"split":"release"}
+{"id":"rel-oose-001","subject":"oose","query":"What is the purpose of boundary-value analysis?","expected_status":"answer","expected_path":"oose/unit-5/equivalence-partitions-and-boundary-values.md","expected_unit":"5","keywords":["boundary","analysis"],"split":"release"}
+{"id":"rel-cn-001","subject":"cn","query":"What is CSMA/CA used for?","expected_status":"answer","expected_path":"cn/unit-2/csma-ca-and-controlled-access.md","expected_unit":"2","keywords":["csma","used"],"split":"release"}
+{"id":"rel-ml-001","subject":"ml","query":"What is the difference between classification and regression?","expected_status":"answer","expected_path":"ml/unit-3/classification-vs-regression.md","expected_unit":"3","keywords":["classification","regression"],"split":"release"}
+{"id":"rel-sc-001","subject":"sc","query":"How does a fuzzy inference system use rules?","expected_status":"answer","expected_path":"sc/unit-2/fuzzy-inference-system.md","expected_unit":"2","keywords":["fuzzy","rules"],"split":"release"}
+{"id":"rel-atcd-001","subject":"atcd","query":"What are the compiler phases?","expected_status":"answer","expected_path":"atcd/unit-1/compiler-phases.md","expected_unit":"1","keywords":["compiler","phases"],"split":"release"}
+{"id":"rel-dwdm-oos-001","subject":"dwdm","query":"Explain the capital of Mars.","expected_status":"refuse","split":"release"}
+{"id":"rel-oose-ambiguous-001","subject":"oose","query":"Explain testing.","expected_status":"clarify","split":"release"}
